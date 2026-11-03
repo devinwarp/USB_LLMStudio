@@ -175,7 +175,7 @@ USB_LLMStudio/
 ├── windows.bat                # Windows Launcher (Double-click entrypoint)
 ├── linux.sh                   # Linux Launcher (Terminal entrypoint)
 ├── mac.sh                     # macOS Launcher (Terminal entrypoint)
-├── LICENSE                    # MIT Open Source License
+├── LICENSE                    # PolyForm Noncommercial 1.0.0
 ├── .gitignore                 # Excludes models and output images from version control
 ├── README.md                  # Detailed system documentation
 ├── scripts/

@@ -24,7 +24,7 @@ Per-scene mp3 in assets/, each lands 0.4 s into its scene; scene length = audio 
 4. `images` — images.png framed card; callout "Stable Diffusion on your GPU".
 5. `voice` — transcribe.png slides left half, voice.png slides right half (split-screen collapse to one row); callout "speech → text → speech".
 6. `models` — models.png framed card; callout "one click from Hugging Face"; a small pop badge lands on the download icon area.
-7. `endcard` — mark.svg wipes in center (the LED tile resolves back into the full mark), "USB LLM Studio" in Inter 800, sub "Your AI studio, on a stick" + "MIT · offline · portable".
+7. `endcard`: mark.svg wipes in center (the LED tile resolves back into the full mark), "USB LLM Studio" in Inter 800, sub "Your AI studio, on a stick" + "Noncommercial · offline · portable".
 
 ## Motion rules
 
