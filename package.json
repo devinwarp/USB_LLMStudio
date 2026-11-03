@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node scripts/server/serve.cjs",
     "build": "npm --prefix app/frontend run build",
-    "test": "node --test scripts/tests/"
+    "test": "node --test scripts/tests/*.test.cjs"
   },
   "license": "SEE LICENSE IN LICENSE"
 }
