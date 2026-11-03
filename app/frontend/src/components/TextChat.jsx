@@ -10,6 +10,7 @@ import {
   startLlm,
   stopLlm,
 } from "../services/api";
+import { useI18n } from "../i18n/context";
 import katex from "katex";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "katex/dist/katex.min.css";
@@ -136,6 +137,7 @@ function TextChat({
     return `${value.toFixed(value < 10 ? 2 : 1)} s`;
   };
 
+  const { t } = useI18n();
   const [models, setModels] = useState([]);
   const [status, setStatus] = useState({ ready: false, running: false, settings: {} });
   const [selectedModel, setSelectedModel] = useState("");
@@ -906,16 +908,16 @@ function TextChat({
   const contextMax = status.settings?.contextSize || 4096;
   const contextUsed = tokenUsage.total_tokens || 0;
   const contextPercent = Math.min(100, Math.round((contextUsed / contextMax) * 100));
-  const composerPlaceholder = status.ready ? "Ask anything" : "Select a model to start chatting";
+  const composerPlaceholder = status.ready ? t("chat.placeholder") : t("chat.placeholderNoModel");
 
   const homeSuggestions = [
     ...(status.ready ? [
       { Icon: PenLine, label: "Write a professional email to reschedule a meeting", onClick: () => setInput("Write a professional email to reschedule a meeting") },
       { Icon: Lightbulb, label: "Explain how transformers work in simple terms", onClick: () => setInput("Explain how transformers work in simple terms") },
     ] : []),
-    { Icon: ImageIcon, label: "Create an image", onClick: () => setActiveTab?.("generator") },
-    { Icon: Mic, label: "Transcribe a recording", onClick: () => setActiveTab?.("speech") },
-    { Icon: AudioLines, label: "Turn text into speech", onClick: () => setActiveTab?.("tts") },
+    { Icon: ImageIcon, label: t("chat.suggestImage"), onClick: () => setActiveTab?.("generator") },
+    { Icon: Mic, label: t("chat.suggestTranscribe"), onClick: () => setActiveTab?.("speech") },
+    { Icon: AudioLines, label: t("chat.suggestSpeech"), onClick: () => setActiveTab?.("tts") },
   ];
 
   const composer = (
@@ -983,7 +985,7 @@ function TextChat({
               title={useWebSearch ? "Disable web search" : "Enable web search"}
             >
               <Globe2 size={15} />
-              <span>Web</span>
+              <span>{t("chat.web")}</span>
             </button>
             {status.ready && supportsThinking && (
               <button
@@ -1080,8 +1082,8 @@ function TextChat({
                 className="chat-composer-send-btn"
                 onClick={sendMessage}
                 disabled={(!input.trim() && attachments.length === 0) || !status.ready}
-                aria-label="Send message"
-                title="Send message"
+                aria-label={t("chat.send")}
+                title={t("chat.send")}
               >
                 <ArrowUp size={18} strokeWidth={2.25} />
               </button>
@@ -1112,7 +1114,7 @@ function TextChat({
           </div>
         ) : !hasMessages ? (
           <div className="chat-home">
-            <h1 className="chat-home-title">What should we make today?</h1>
+            <h1 className="chat-home-title">{t("chat.homeTitle")}</h1>
             {composer}
             <ul className="chat-home-suggestions">
               {homeSuggestions.map(({ Icon, label, onClick }) => (

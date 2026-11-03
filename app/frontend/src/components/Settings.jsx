@@ -15,6 +15,8 @@ import {
 } from "../services/api";
 import { THEMES } from "../themes";
 import "../styles/settings.css";
+import { useI18n } from "../i18n/context";
+import { LOCALES } from "../i18n/strings";
 
 const ASPECT_RATIOS = [
   { id: "1:1", label: "1:1 Square", width: 512, height: 512, sdxl_width: 1024, sdxl_height: 1024, desc: "Social posts & avatars" },
@@ -214,7 +216,10 @@ function Settings({
   setTheme,
   fontSize,
   setFontSize,
+  locale,
+  setLocale,
 }) {
+  const { t } = useI18n();
   const [llmStatus, setLlmStatus] = useState({ ready: false, settings: {} });
   const [llmBackends, setLlmBackends] = useState({ available: [], candidates: [] });
   const [llmStats, setLlmStats] = useState({ benchmarks: [] });
@@ -1052,6 +1057,7 @@ function Settings({
     const SPEECH_LANGUAGES = [
       { value: "auto", label: "Auto detect" },
       { value: "en", label: "English" },
+      { value: "ar", label: "Arabic" },
       { value: "es", label: "Spanish" },
       { value: "fr", label: "French" },
       { value: "de", label: "German" },
@@ -1206,6 +1212,18 @@ function Settings({
           );
         })}
       </div>
+
+      <div className="page-section-label settings-group-label">{t("settings.language")}</div>
+      <ul className="row-list">
+        <SettingRow title={t("settings.language")} description={t("settings.languageDescription")}>
+          <Choice
+            label={t("settings.language")}
+            options={Object.entries(LOCALES).map(([id, info]) => ({ id, label: info.label }))}
+            value={locale}
+            onSelect={setLocale}
+          />
+        </SettingRow>
+      </ul>
 
       <div className="page-section-label settings-group-label">Text</div>
       <ul className="row-list">

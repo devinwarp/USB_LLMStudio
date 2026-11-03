@@ -8,7 +8,10 @@ import TextChat from "./components/TextChat";
 import SpeechTranscriber from "./components/SpeechTranscriber";
 import TextToSpeech from "./components/TextToSpeech";
 import { cleanupCandidates, formatBytes, getCleanupCandidates, getDiagnostics, getHardwareSpecs, getHealth, getTelemetry, getBackendOptions, getBackendStatus, listGeneratedOutputs, listLlmConversations, saveLlmConversation, deleteLlmConversation, listSpeechTranscriptions, deleteSpeechTranscription, listTtsOutputs, deleteTtsOutput } from "./services/api";
+import { I18nProvider } from "./i18n/context";
+import { LOCALE_STORAGE_KEY, applyLocaleToDocument, normalizeLocale } from "./i18n/strings";
 import "./App.css";
+import "./styles/rtl.css";
 
 // Screens live in the URL hash (#/chat, #/chat/<id>, #/images, ...) so a refresh
 // reopens the same screen and the browser's back/forward buttons work.
@@ -70,6 +73,14 @@ function App() {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  // UI language and text direction (Arabic switches the layout to right-to-left)
+  const [locale, setLocale] = useState(() => normalizeLocale(localStorage.getItem(LOCALE_STORAGE_KEY)));
+
+  useEffect(() => {
+    applyLocaleToDocument(locale);
+    localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  }, [locale]);
 
   // Navigation
   const [activeTab, setActiveTab] = useState(() => readRoute().tab);
@@ -763,6 +774,7 @@ function App() {
   const handleTextUnloaded = useCallback(() => setIsLlmLoaded(false), []);
 
   return (
+    <I18nProvider locale={locale}>
     <div className="app-container">
       {/* Sidebar with Navigation Rail & Specs */}
       {sidebarContent}
@@ -901,6 +913,8 @@ function App() {
             setTheme={setTheme}
             fontSize={fontSize}
             setFontSize={setFontSize}
+            locale={locale}
+            setLocale={setLocale}
           />
         </div>
       </div>
@@ -927,6 +941,7 @@ function App() {
         </div>
       )}
     </div>
+    </I18nProvider>
   );
 }
 

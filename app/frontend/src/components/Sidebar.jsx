@@ -1,6 +1,8 @@
 import React, { memo, useMemo, useRef, useState, useEffect } from "react";
 import { Image, Box, Mic, Settings, Trash2, AudioLines, SquarePen, PanelLeftClose, Search, X, ChevronRight } from "lucide-react";
 import BrandMark from "./BrandMark";
+import { useI18n } from "../i18n/context";
+import { DIRECTION } from "../i18n/strings";
 
 const SIDEBAR_MIN = 200;
 const SIDEBAR_MAX = 420;
@@ -148,6 +150,7 @@ function Sidebar({
   setSelectedSpeechTranscript,
   onDeleteSpeechTranscription,
 }) {
+  const { t } = useI18n();
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const searchRef = useRef(null);
@@ -164,9 +167,11 @@ function Sidebar({
     event.preventDefault();
     const startX = event.clientX;
     const startWidth = width;
+    // In right-to-left layouts the sidebar sits on the right, so dragging left widens it
+    const towardContent = document.documentElement.dir === DIRECTION.RTL ? -1 : 1;
     setResizing(true);
     document.body.style.cursor = "col-resize";
-    const onMove = (moveEvent) => setWidth(clampWidth(startWidth + moveEvent.clientX - startX));
+    const onMove = (moveEvent) => setWidth(clampWidth(startWidth + towardContent * (moveEvent.clientX - startX)));
     const onUp = () => {
       setResizing(false);
       document.body.style.cursor = "";
@@ -178,7 +183,7 @@ function Sidebar({
   };
 
   const resizeWithKeys = (event) => {
-    const step = event.shiftKey ? 40 : 16;
+    const step = (event.shiftKey ? 40 : 16) * (document.documentElement.dir === DIRECTION.RTL ? -1 : 1);
     const nextWidth = {
       ArrowLeft: (current) => current - step,
       ArrowRight: (current) => current + step,
@@ -245,20 +250,20 @@ function Sidebar({
     }));
 
     return [
-      { id: "chats", label: "Chats", items: chats.filter(matches).sort(newestFirst) },
-      { id: "transcriptions", label: "Transcriptions", items: transcripts.filter(matches).sort(newestFirst) },
+      { id: "chats", label: t("recents.chats"), items: chats.filter(matches).sort(newestFirst) },
+      { id: "transcriptions", label: t("recents.transcriptions"), items: transcripts.filter(matches).sort(newestFirst) },
     ];
   }, [
     query, conversations, speechTranscriptions, activeTab, activeConversationId,
     selectedSpeechTranscript, setActiveTab, setActiveConversationId,
-    setSelectedSpeechTranscript, onDeleteConversation, onDeleteSpeechTranscription
+    setSelectedSpeechTranscript, onDeleteConversation, onDeleteSpeechTranscription, t
   ]);
 
   const navItems = [
-    { tab: "generator", label: "Images", Icon: Image },
-    { tab: "speech", label: "Transcribe", Icon: Mic },
-    { tab: "tts", label: "Voice", Icon: AudioLines },
-    { tab: "models", label: "Models", Icon: Box },
+    { tab: "generator", label: t("nav.images"), Icon: Image },
+    { tab: "speech", label: t("nav.transcribe"), Icon: Mic },
+    { tab: "tts", label: t("nav.voice"), Icon: AudioLines },
+    { tab: "models", label: t("nav.models"), Icon: Box },
   ];
 
   const isNewChatActive = activeTab === "chat" && !activeConversationId;
@@ -337,7 +342,7 @@ function Sidebar({
           onKeyDown={activateOnKey}
         >
           <SquarePen size={20} aria-hidden="true" />
-          <span>New chat</span>
+          <span>{t("nav.newChat")}</span>
         </div>
         {navItems.map(({ tab, label, Icon }) => (
           <div
@@ -368,7 +373,7 @@ function Sidebar({
         ))}
         {!hasResults && (
           <p className="sidebar-recents-empty">
-            {query ? "No matches." : "Your chats and recordings will show up here."}
+            {query ? t("recents.noMatches") : t("recents.empty")}
           </p>
         )}
       </div>
@@ -383,7 +388,7 @@ function Sidebar({
           onKeyDown={activateOnKey}
         >
           <Settings size={20} aria-hidden="true" />
-          <span>Settings</span>
+          <span>{t("nav.settings")}</span>
         </div>
         <div className="sidebar-device" title={`${specs.cpu_name} · ${specs.gpu_name} · ${specs.os_name}`}>
           <span className="sidebar-device-avatar" aria-hidden="true">

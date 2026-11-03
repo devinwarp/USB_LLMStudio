@@ -1,0 +1,37 @@
+/* Right-to-left fixes (html[dir="rtl"], set from the Language setting).
+   Flex rows and text alignment flip on their own; these cover physical left/right rules. */
+
+[dir="rtl"] .sidebar {
+  border-right: none;
+  border-left: 1px solid var(--border-color-muted);
+}
+
+[dir="rtl"] .sidebar-resize-handle {
+  right: auto;
+  left: -4px;
+}
+
+/* History section chevrons point toward the content side */
+[dir="rtl"] .sidebar-section-chevron {
+  margin-left: 0;
+  margin-right: auto;
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .sidebar-section-label[aria-expanded="true"] .sidebar-section-chevron {
+  transform: rotate(90deg);
+}
+
+/* Code, math and file names stay left-to-right inside Arabic text */
+[dir="rtl"] pre,
+[dir="rtl"] code,
+[dir="rtl"] .chat-math-block,
+[dir="rtl"] .katex {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Inter has no Arabic glyphs; prefer the system Arabic UI fonts over a random fallback */
+:root[lang="ar"] {
+  --font-sans: "Inter Variable", "SF Arabic", "Segoe UI", "Noto Sans Arabic", "Geeza Pro", Tahoma, sans-serif;
+}
