@@ -6,6 +6,15 @@ const { pathToFileURL } = require("node:url");
 
 const root = path.resolve(__dirname, "..", "..");
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
+// The server is split across serve.cjs, its shared helpers and the route modules in
+// scripts/server/routes, so source assertions run over all of them together.
+const SERVER_DIR = path.join("scripts", "server");
+const SERVER_ROUTES_DIR = path.join(SERVER_DIR, "routes");
+const listCjs = (relativeDir) => fs.readdirSync(path.join(root, relativeDir))
+  .filter((name) => name.endsWith(".cjs"))
+  .sort()
+  .map((name) => path.join(relativeDir, name));
+const readServer = () => [...listCjs(SERVER_DIR), ...listCjs(SERVER_ROUTES_DIR)].map(read).join("\n");
 
 test("text-to-image sends seed and sampling settings to sdapi", async () => {
   const api = read("app/frontend/src/services/api.js");
@@ -65,9 +74,9 @@ test("text-to-image sends seed and sampling settings to sdapi", async () => {
 });
 
 test("slow image generation has no fixed proxy timeout and blocks destructive restarts", () => {
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
   assert.match(server, /function proxyImageBackendRequest[\s\S]*?timeout:\s*0/);
-  assert.match(server, /if \(generationState\.active\)[\s\S]*?Image generation is in progress/);
+  assert.match(server, /if \((?:state\.)?generationState\.active\)[\s\S]*?Image generation is in progress/);
 });
 
 test("Windows OpenVINO setup only accepts Intel NPUs and remains optional", () => {
@@ -109,7 +118,7 @@ test("Windows launcher remains ASCII-safe for cmd.exe", () => {
 
 test("Windows Vulkan setup repairs issue 10 runtime and RX 580 backend failures", () => {
   const setup = read("scripts/setup/setup.ps1");
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
 
   assert.match(setup, /https:\/\/aka\.ms\/vc14\/vc_redist\.x64\.exe/);
   assert.match(setup, /VCOMP140\.dll/);
@@ -123,7 +132,7 @@ test("Windows Vulkan setup repairs issue 10 runtime and RX 580 backend failures"
 
 test("Windows setup repairs issue 44 illegal instructions and RTX 50 CUDA runtime", () => {
   const setup = read("scripts/setup/setup.ps1");
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
 
   assert.match(setup, /master-782-b290693\/sd-master-b290693-bin-win-cuda12-x64\.zip/);
   assert.match(setup, /master-782-b290693\/cudart-sd-bin-win-cu12-x64\.zip/);
@@ -146,7 +155,7 @@ test("Kokoro setup uses pinned online dependencies and skips optional CUDA paylo
 });
 
 test("model imports retry locked files and explain large-drive failures", () => {
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
   assert.match(server, /function withFileRetrySync/);
   assert.match(server, /function replaceFileWithRetry/);
   assert.match(server, /fs\.openSync\(tempPath, "w"\)/);
@@ -177,7 +186,7 @@ test("text chat accepts document attachments without requiring a vision model", 
 test("issue 90: llama.cpp backend updates on release bumps and mllama fails with a clear message", () => {
   const ps1 = read("scripts/setup/setup-llama.ps1");
   const sh = read("scripts/setup/setup-llama.sh");
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
 
   assert.match(ps1, /\.llama-release/);
   assert.match(sh, /\.llama-release/);
@@ -188,13 +197,13 @@ test("issue 90: llama.cpp backend updates on release bumps and mllama fails with
 });
 
 test("issue 84: in-app CUDA image backend download also installs the CUDA runtime", () => {
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
   assert.match(server, /runtimeUrl: "https:\/\/github\.com\/leejet\/stable-diffusion\.cpp\/releases\/download\/master-782-b290693\/cudart-sd-bin-win-cu12-x64\.zip"/);
   assert.match(server, /startImageBackendDownload\(backend\.id, 0, "", "runtime"\)/);
 });
 
 test("issue 96: model downloads reject repository pages and HTML responses", () => {
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
   assert.match(server, /function getModelDownloadUrlIssue/);
   assert.match(server, /Hugging Face repository page, not a model file/);
   assert.match(server, /content-type"\] \|\| ""\)\.toLowerCase\(\)\.includes\("text\/html"\)/);
@@ -209,7 +218,7 @@ test("issue 85: chat shows reasoning, scrolls only the message list, renders tab
   assert.match(chat, /type: "table"/);
   assert.match(chat, /katex\.renderToString/);
   assert.match(chat, /extractPdfText/);
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
   assert.match(server, /async function planWebSearchQuery/);
 });
 
@@ -217,20 +226,20 @@ test("issue 82: speech upload converts any browser-decodable audio to 16 kHz WAV
   const speech = read("app/frontend/src/components/SpeechTranscriber.jsx");
   assert.match(speech, /convertAudioFileTo16kWav/);
   assert.doesNotMatch(speech, /V1 accepts WAV files only/);
-  assert.match(read("scripts/server/serve.cjs"), /readBinaryBody\(req, limitBytes = 1024 \* 1024 \* 1024\)/);
+  assert.match(readServer(), /readBinaryBody\(req, limitBytes = 1024 \* 1024 \* 1024\)/);
 });
 
 test("issue 87: vision catalog models ship matching projectors and never borrow another model's", () => {
   const manager = read("app/frontend/src/components/ModelManager.jsx");
   assert.match(manager, /mmproj-Qwen2\.5-VL-3B-Instruct-Q8_0\.gguf/);
   assert.match(manager, /mmproj-Qwen2\.5-VL-7B-Instruct-Q8_0\.gguf/);
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
   assert.match(server, /lower\.includes\("qwen2\.5-vl"\)/);
   assert.doesNotMatch(server, /lower === "mmproj-model-f16\.gguf" \|\| lower\.includes\("mmproj"\)/);
 });
 
 test("issue 86: image backend validation keeps the real failure reason", () => {
-  const server = read("scripts/server/serve.cjs");
+  const server = readServer();
   assert.match(server, /amdgpu\.si_support=1/);
   assert.match(server, /build_from_source\.sh/);
   assert.doesNotMatch(server, /In-app backend downloads are currently available for Windows image backends\./);
