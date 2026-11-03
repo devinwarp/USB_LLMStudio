@@ -10,6 +10,7 @@ import {
   startLlm,
   stopLlm,
 } from "../services/api";
+import TalkMode from "./TalkMode";
 import katex from "katex";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "katex/dist/katex.min.css";
@@ -142,6 +143,7 @@ function TextChat({
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const [talkMode, setTalkMode] = useState(false);
   const [useWebSearch, setUseWebSearch] = useState(false);
   const [webTimeFilter, setWebTimeFilter] = useState("any");
   const [loadingModel, setLoadingModel] = useState(null);
@@ -597,10 +599,11 @@ function TextChat({
     setActiveConversationId(null);
   };
 
-  const sendMessage = async () => {
-    const text = input.trim();
+  // Talk mode passes the spoken text and hooks.onContent(reply so far); resolves to the reply text
+  const sendMessage = async (spokenText = null, hooks = {}) => {
+    const text = (spokenText ?? input).trim();
     const hasAttachments = attachments.length > 0;
-    if ((!text && !hasAttachments) || isBusy || !status.ready) return;
+    if ((!text && !hasAttachments) || isBusy || !status.ready) return "";
 
     let convId = activeConversationId;
     let isNew = false;
@@ -670,7 +673,7 @@ function TextChat({
     const requestConversationMessages = [...messages, { role: "user", content: requestUserMessageContent }];
     followGenerationRef.current = true;
     setMessages(nextMessages);
-    setInput("");
+    if (spokenText === null) setInput("");
     setIsBusy(true);
 
     const displayTitleText = text || (imageAttachments.length > 0 ? "Sent Image" : "Sent File");
@@ -751,6 +754,7 @@ function TextChat({
         const processed = processMessageContent(fullText, fullReasoning);
         assistantText = processed.content;
         assistantReasoning = processed.reasoning;
+        hooks.onContent?.(processed.content);
 
         // Calculate thinking duration
         if (processed.reasoning && !thinkingStartedAt) {
@@ -859,6 +863,7 @@ function TextChat({
       
       // Clean up attached files on success
       setAttachments([]);
+      return processed.content;
     } catch (err) {
       if (err.name === "AbortError") {
         setMessages((prev) => {
@@ -881,6 +886,7 @@ function TextChat({
         setMessages(finalMessages);
         saveConversationState(convId, finalMessages, selectedModel);
       }
+      return "";
     } finally {
       setIsBusy(false);
       abortControllerRef.current = null;
@@ -944,6 +950,14 @@ function TextChat({
       )}
 
       <div className="chat-composer-inner">
+        {talkMode ? (
+          <TalkMode
+            disabled={!status.ready}
+            onSend={sendMessage}
+            onStopGeneration={handleStopGeneration}
+            showAlert={showAlert}
+          />
+        ) : (
         <textarea
           ref={textareaRef}
           className="chat-composer-textarea"
@@ -960,6 +974,7 @@ function TextChat({
           disabled={!status.ready || isBusy}
           rows={1}
         />
+        )}
 
         <div className="chat-composer-toolbar">
           <div className="chat-composer-toolbar-left">
@@ -984,6 +999,17 @@ function TextChat({
             >
               <Globe2 size={15} />
               <span>Web</span>
+            </button>
+            <button
+              type="button"
+              className={`chat-composer-chip ${talkMode ? "active" : ""}`}
+              onClick={() => setTalkMode((value) => !value)}
+              disabled={!status.ready}
+              aria-pressed={talkMode}
+              title={talkMode ? "Back to typing" : "Talk mode: speak and hear the reply"}
+            >
+              <Mic size={15} />
+              <span>Talk</span>
             </button>
             {status.ready && supportsThinking && (
               <button
@@ -1078,7 +1104,7 @@ function TextChat({
               <button
                 type="button"
                 className="chat-composer-send-btn"
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={(!input.trim() && attachments.length === 0) || !status.ready}
                 aria-label="Send message"
                 title="Send message"

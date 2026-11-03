@@ -1,0 +1,101 @@
+/* Talk mode: push-to-talk bar that replaces the chat textarea */
+
+.talk-mode {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 0 4px;
+}
+
+.talk-mode-ptt {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.talk-mode-ptt:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--md-sys-color-primary) 45%, transparent);
+}
+
+.talk-mode-ptt:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.talk-mode-ptt.listening {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  transform: scale(1.06);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
+}
+
+.talk-mode-ptt:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.talk-mode-ptt .talk-mode-spin {
+  animation: talk-mode-spin 0.9s linear infinite;
+}
+
+@keyframes talk-mode-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.talk-mode-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.talk-mode-status {
+  color: var(--md-sys-color-on-surface);
+  font-size: 1.02rem;
+  line-height: 1.4;
+}
+
+.talk-mode-voice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--md-sys-color-outline);
+  font-size: 0.85rem;
+}
+
+.talk-mode-voice select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .talk-mode-ptt,
+  .talk-mode-ptt.listening {
+    transition: none;
+    transform: none;
+  }
+
+  .talk-mode-ptt .talk-mode-spin {
+    animation: none;
+  }
+}
