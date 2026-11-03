@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>USB LLM Studio</title>
+    <style>
+      :root {
+        --surface: #ffffff;
+        --on-surface: #1d1d1f;
+        --muted: #6e6e73;
+        --accent: #ff6a3d;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --surface: #1a1a1a;
+          --on-surface: #f4f4f4;
+          --muted: #a1a1a6;
+        }
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        background: var(--surface);
+        color: var(--on-surface);
+        font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      main {
+        max-width: 460px;
+        padding: 24px;
+        text-align: center;
+      }
+      svg {
+        width: 72px;
+        height: 72px;
+      }
+      h1 {
+        margin: 16px 0 6px;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+      .error h1 {
+        color: var(--accent);
+      }
+      .error p {
+        color: var(--on-surface);
+        white-space: pre-line;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="status">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <path fill="#ff6a3d" d="M8 42a4 4 0 0 1 4-4h26a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V42Z"/>
+        <path fill="#0d0d0f" d="M14 45h4v10h-4zM23 45h4v10h-4z"/>
+        <path fill="#1d1d1f" d="M38 28h46a10 10 0 0 1 10 10v24a10 10 0 0 1-10 10H38a10 10 0 0 1-10-10V38a10 10 0 0 1 10-10Z"/>
+        <path fill="#ff6a3d" d="M66 36l5 10 10 4-10 4-5 10-5-10-10-4 10-4Z"/>
+      </svg>
+      <h1 id="title">Starting USB LLM Studio…</h1>
+      <p id="detail">Starting the local server. Everything stays on this computer.</p>
+    </main>
+    <script>
+      // Called by the desktop shell (src/main.rs) when the local server cannot start.
+      window.showError = function (message) {
+        document.getElementById("status").className = "error";
+        document.getElementById("title").textContent = "USB LLM Studio could not start";
+        document.getElementById("detail").textContent = message;
+      };
+    </script>
+  </body>
+</html>

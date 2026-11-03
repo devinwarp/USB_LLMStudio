@@ -1,9 +1,10 @@
 // Tauri API helper for desktop mode, falling back to HTTP/Mock in browser
 import { invoke } from "@tauri-apps/api/core";
 
-// Helper to check if running inside Tauri desktop container
+// True only for the legacy in-process Tauri backend (invoke commands). The desktop shell in
+// src-tauri loads the UI from the local Node server over http, so it uses the HTTP API like a browser.
 export const isTauri = () => {
-  return typeof window !== "undefined" && window.__TAURI_INTERNALS__ !== undefined;
+  return typeof window !== "undefined" && window.__TAURI_INTERNALS__ !== undefined && !isLocalServerMode();
 };
 
 // Cached hardware specs

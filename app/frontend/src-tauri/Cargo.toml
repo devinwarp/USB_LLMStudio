@@ -1,0 +1,19 @@
+[package]
+name = "usb-llm-studio"
+version = "0.1.0"
+description = "USB LLM Studio desktop shell: runs the local server and shows the UI in its own window"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde_json = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
