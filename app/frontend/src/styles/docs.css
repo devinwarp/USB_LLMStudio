@@ -1,0 +1,15 @@
+/* Document chat: library strip above the composer and cited passages under answers */
+
+.doc-library {
+  align-items: center;
+}
+
+.doc-library-hint {
+  color: var(--md-sys-color-outline);
+  font-size: 0.85rem;
+}
+
+.chat-sources > span {
+  color: var(--md-sys-color-on-surface);
+  overflow-wrap: anywhere;
+}

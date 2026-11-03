@@ -11,7 +11,9 @@ import {
   stopLlm,
 } from "../services/api";
 import katex from "katex";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { extractPdfPages } from "../utils/pdf";
+import DocLibrary from "./DocLibrary";
+import { buildDocumentContext, formatDocumentCitation, searchDocuments } from "../services/docs";
 import "katex/dist/katex.min.css";
 
 // Splits model reasoning from the answer. Reasoning is always extracted (and shown collapsed
@@ -142,6 +144,9 @@ function TextChat({
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const [docMode, setDocMode] = useState(false);
+  const [docCount, setDocCount] = useState(0);
+  const handleDocumentsChange = useCallback((docs) => setDocCount(docs.length), []);
   const [useWebSearch, setUseWebSearch] = useState(false);
   const [webTimeFilter, setWebTimeFilter] = useState("any");
   const [loadingModel, setLoadingModel] = useState(null);
@@ -689,10 +694,15 @@ function TextChat({
     abortControllerRef.current = controller;
 
     try {
+      // Document chat: retrieve the most relevant passages and have the model cite them
+      const docSources = docMode && docCount > 0 && requestText
+        ? await searchDocuments(requestText)
+        : [];
       const systemPrompt = textSettings?.systemPrompt || "You are a helpful local AI assistant.";
       const combinedSystemPrompt = [
         systemPrompt.trim(),
         visionInstruction,
+        buildDocumentContext(docSources),
       ].filter(Boolean).join("\n\n");
       const requestMessages = [
         ...(combinedSystemPrompt ? [{ role: "system", content: combinedSystemPrompt }] : []),
@@ -836,6 +846,7 @@ function TextChat({
         thinkingDuration: finalThinkingDuration,
         generationStats,
         webSources: response.webSources || [],
+        docSources: docSources.map(({ index, name, page }) => ({ index, name, page })),
       }];
       setMessages(finalMessages);
       saveConversationState(convId, finalMessages, selectedModel);
@@ -943,6 +954,10 @@ function TextChat({
         </div>
       )}
 
+      {docMode && (
+        <DocLibrary onDocumentsChange={handleDocumentsChange} showAlert={showAlert} disabled={isBusy} />
+      )}
+
       <div className="chat-composer-inner">
         <textarea
           ref={textareaRef}
@@ -984,6 +999,17 @@ function TextChat({
             >
               <Globe2 size={15} />
               <span>Web</span>
+            </button>
+            <button
+              type="button"
+              className={`chat-composer-chip ${docMode ? "active" : ""}`}
+              onClick={() => setDocMode((value) => !value)}
+              disabled={!status.ready || isBusy}
+              aria-pressed={docMode}
+              title={docMode ? "Stop using your documents" : "Chat with your documents (PDF, text)"}
+            >
+              <FileText size={15} />
+              <span>Docs</span>
             </button>
             {status.ready && supportsThinking && (
               <button
@@ -1221,6 +1247,20 @@ function TextChat({
                           </div>
                         )}
 
+                        {message.role === "assistant" && Array.isArray(message.docSources) && message.docSources.length > 0 && (
+                          <div className="chat-sources">
+                            <div className="chat-sources-title">
+                              <FileText size={13} aria-hidden="true" />
+                              <span>Documents</span>
+                            </div>
+                            {message.docSources.map((source) => (
+                              <span key={`${source.index}-${source.name}-${source.page}`}>
+                                [{source.index}] {formatDocumentCitation(source)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
                         {message.role === "assistant" && message.generationStats && !message.error && (
                           <>
                             {message.generationStats.truncated && (
@@ -1257,18 +1297,8 @@ function TextChat({
 // PDF text is extracted in the browser, so PDFs work with every model, not only vision ones.
 // pdf.js is loaded on first use to keep it out of the main bundle.
 async function extractPdfText(file) {
-  const pdfjs = await import("pdfjs-dist");
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-  const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
-  const pages = [];
-  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-    const page = await pdf.getPage(pageNumber);
-    const textContent = await page.getTextContent();
-    const text = textContent.items.map((item) => (item.str || "") + (item.hasEOL ? "\n" : " ")).join("").trim();
-    if (text) pages.push(`[Page ${pageNumber}]\n${text}`);
-  }
-  await pdf.destroy();
-  return pages.join("\n\n");
+  const pages = await extractPdfPages(file);
+  return pages.map(({ page, text }) => `[Page ${page}]\n${text}`).join("\n\n");
 }
 
 // Only real web links are clickable; anything else (javascript:, data:) renders as text.

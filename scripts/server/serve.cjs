@@ -13,6 +13,8 @@ const { spawn, spawnSync, execSync, exec, execFile, execFileSync } = require("ch
 const { comprehensiveWebSearch } = require("../search/core");
 const { detectModelKindCached } = require("./model-kind.cjs");
 const { getUrlTargetIssue, resolvePublicTarget, pinnedRequestOptions } = require("../lib/url-safety.cjs");
+// Document chat hook: routes live in doc-chat.cjs
+const docChat = require("./doc-chat.cjs").createDocChat();
 
 // HTTP keep-alive agent for llama-server (eliminates TCP handshake per request)
 const llmHttpAgent = new http.Agent({
@@ -7765,6 +7767,9 @@ async function getLlmfitRecommendations(useCase = "chat", limit = 10) {
       return json(res, 500, { error: err.message });
     }
   }
+
+  // Document chat hook (/api/docs/*, see doc-chat.cjs)
+  if (await docChat.handle(req, res)) return;
 
   if (req.url.startsWith("/api/")) {
     return json(res, 404, { ok: false, error: "Unknown API endpoint" });

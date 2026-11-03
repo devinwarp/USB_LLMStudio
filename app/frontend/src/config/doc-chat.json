@@ -1,0 +1,15 @@
+{
+  "routes": {
+    "list": "/api/docs",
+    "add": "/api/docs/add",
+    "delete": "/api/docs/delete",
+    "search": "/api/docs/search"
+  },
+  "limits": {
+    "maxDocumentChars": 3000000,
+    "maxQueryChars": 2000,
+    "defaultTopK": 5,
+    "maxTopK": 12
+  },
+  "acceptedFileTypes": ".pdf,.txt,.md,.markdown,.csv,.json,.html,.xml,.log"
+}
